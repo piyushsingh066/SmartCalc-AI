@@ -313,6 +313,7 @@ body {
   gap: 0.75rem;
   letter-spacing: -0.025em;
   background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
+  background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -331,27 +332,48 @@ body {
   display: flex;
   align-items: center;
   gap: 0.85rem;
-  padding: 0.75rem 1rem;
+  padding: 0.75rem 1.25rem;
   border-radius: 12px;
   color: var(--text-secondary);
   font-size: 0.95rem;
-  font-weight: 500;
+  font-weight: 700; /* Clear vision in bold */
   text-decoration: none;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   border: 1px solid transparent;
+  background: transparent; /* Reset browser default button background */
+  width: 100%;
+  text-align: left;
+  outline: none;
+}
+
+.sidebar-item svg {
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
 }
 
 .sidebar-item:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.05);
   color: var(--text-primary);
-  transform: translateX(4px);
+  border-color: rgba(255, 255, 255, 0.05);
+  transform: translateX(6px);
+}
+
+.sidebar-item:hover svg {
+  color: var(--text-primary);
+  transform: scale(1.1);
 }
 
 .sidebar-item.active {
-  background: var(--key-op-bg);
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.2) 0%, rgba(139, 92, 246, 0.1) 100%);
   color: var(--text-primary);
-  border-color: var(--card-border);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.15);
+}
+
+.sidebar-item.active svg {
+  color: var(--accent);
+  filter: drop-shadow(0 0 5px var(--accent-glow));
 }
 
 .sidebar-footer {

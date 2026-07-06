@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Trash, Search, ArrowRight, CornerDownLeft } from 'lucide-react';
-import { db } from '../context/db';
+import { db } from '../context/dbAdapter';
 import { useTheme } from '../context/ThemeContext';
 
 export const HistoryList = ({ onReuse }) => {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Scale } from 'lucide-react';
-import { db } from '../context/db';
+import { db } from '../context/dbAdapter';
 import { useTheme } from '../context/ThemeContext';
 
 export const UnitConverter = () => {

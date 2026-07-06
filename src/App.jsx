@@ -13,6 +13,7 @@ import { DatabaseViewer } from './components/DatabaseViewer';
 import { AIExplainer } from './components/AIExplainer';
 import { OCRScanner } from './components/OCRScanner';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
+import { PWAController } from './components/PWAController';
 
 function AppContent() {
   // Navigation states
@@ -145,6 +146,9 @@ function AppContent() {
           </div>
         ))}
       </div>
+
+      {/* 6. PWA Install & Offline Controller */}
+      <PWAController />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Copy, Star, RotateCcw, RotateCw, Sparkles, Delete } from 'lucide-react';
-import { db } from '../context/db';
+import { db } from '../context/dbAdapter';
 import { useTheme } from '../context/ThemeContext';
 import { parseAndSolve } from '../utils/mathParser';
 

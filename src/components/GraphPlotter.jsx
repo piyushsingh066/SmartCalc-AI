@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Trash, Eye, EyeOff, ZoomIn, ZoomOut, Move } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
-import { db } from '../context/db';
+import { db } from '../context/dbAdapter';
 import { parseAndSolve } from '../utils/mathParser';
 
 export const GraphPlotter = () => {

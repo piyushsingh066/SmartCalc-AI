@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Database, Trash, RefreshCw, AlertCircle, Edit, Check } from 'lucide-react';
-import { db } from '../context/db';
+import { db } from '../context/dbAdapter';
 import { useTheme } from '../context/ThemeContext';
 
 export const DatabaseViewer = () => {

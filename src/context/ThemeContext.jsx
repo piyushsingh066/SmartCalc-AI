@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { db } from './db';
+import { db } from './dbAdapter';
 
 const ThemeContext = createContext();
 
