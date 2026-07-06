@@ -1,8 +1,166 @@
 import React, { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { Coins, RefreshCw, ArrowLeftRight, Search } from 'lucide-react';
+import { Coins, RefreshCw, ArrowLeftRight } from 'lucide-react';
 import { db } from '../context/dbAdapter';
 import { useTheme } from '../context/ThemeContext';
+
+const CURRENCY_DETAILS = {
+  USD: { name: 'US Dollar', flag: '🇺🇸' },
+  EUR: { name: 'Euro', flag: '🇪🇺' },
+  GBP: { name: 'British Pound', flag: '🇬🇧' },
+  INR: { name: 'Indian Rupee', flag: '🇮🇳' },
+  JPY: { name: 'Japanese Yen', flag: '🇯🇵' },
+  CAD: { name: 'Canadian Dollar', flag: '🇨🇦' },
+  AUD: { name: 'Australian Dollar', flag: '🇦🇺' },
+  CNY: { name: 'Chinese Yuan', flag: '🇨🇳' },
+  CHF: { name: 'Swiss Franc', flag: '🇨🇭' },
+  NZD: { name: 'New Zealand Dollar', flag: '🇳🇿' },
+  AED: { name: 'UAE Dirham', flag: '🇦🇪' },
+  AFN: { name: 'Afghan Afghani', flag: '🇦🇫' },
+  ALL: { name: 'Albanian Lek', flag: '🇦🇱' },
+  AMD: { name: 'Armenian Dram', flag: '🇦🇲' },
+  ANG: { name: 'Neth. Antillean Guilder', flag: '🇨🇼' },
+  AOA: { name: 'Angolan Kwanza', flag: '🇦🇴' },
+  ARS: { name: 'Argentine Peso', flag: '🇦🇷' },
+  AWG: { name: 'Aruban Florin', flag: '🇦🇼' },
+  AZN: { name: 'Azerbaijani Manat', flag: '🇦🇿' },
+  BAM: { name: 'Bosnia-Herzegovina Mark', flag: '🇧🇦' },
+  BBD: { name: 'Barbadian Dollar', flag: '🇧🇧' },
+  BDT: { name: 'Bangladeshi Taka', flag: '🇧🇩' },
+  BGN: { name: 'Bulgarian Lev', flag: '🇧🇬' },
+  BHD: { name: 'Bahraini Dinar', flag: '🇧🇭' },
+  BIF: { name: 'Burundian Franc', flag: '🇧🇮' },
+  BMD: { name: 'Bermudian Dollar', flag: '🇧🇲' },
+  BND: { name: 'Brunei Dollar', flag: '🇧🇳' },
+  BOB: { name: 'Bolivian Boliviano', flag: '🇧🇴' },
+  BRL: { name: 'Brazilian Real', flag: '🇧🇷' },
+  BSD: { name: 'Bahamian Dollar', flag: '🇧🇸' },
+  BTN: { name: 'Bhutanese Ngultrum', flag: '🇧🇹' },
+  BWP: { name: 'Botswanan Pula', flag: '🇧🇼' },
+  BYN: { name: 'Belarusian Ruble', flag: '🇧🇾' },
+  BZD: { name: 'Belize Dollar', flag: '🇧🇿' },
+  CDF: { name: 'Congolese Franc', flag: '🇨🇩' },
+  CLP: { name: 'Chilean Peso', flag: '🇨🇱' },
+  COP: { name: 'Colombian Peso', flag: '🇨🇴' },
+  CRC: { name: 'Costa Rican Colón', flag: '🇨🇷' },
+  CUP: { name: 'Cuban Peso', flag: '🇨🇺' },
+  CVE: { name: 'Cape Verdean Escudo', flag: '🇨🇻' },
+  CZK: { name: 'Czech Koruna', flag: '🇨🇿' },
+  DJF: { name: 'Djiboutian Franc', flag: '🇩🇯' },
+  DKK: { name: 'Danish Krone', flag: '🇩🇰' },
+  DOP: { name: 'Dominican Peso', flag: '🇩🇴' },
+  DZD: { name: 'Algerian Dinar', flag: '🇩🇿' },
+  EGP: { name: 'Egyptian Pound', flag: '🇪🇬' },
+  ERN: { name: 'Eritrean Nakfa', flag: '🇪🇷' },
+  ETB: { name: 'Ethiopian Birr', flag: '🇪🇹' },
+  FJD: { name: 'Fijian Dollar', flag: '🇫🇯' },
+  FKP: { name: 'Falkland Islands Pound', flag: '🇫🇰' },
+  GEL: { name: 'Georgian Lari', flag: '🇬🇪' },
+  GHS: { name: 'Ghanaian Cedi', flag: '🇬🇭' },
+  GIP: { name: 'Gibraltar Pound', flag: '🇬🇮' },
+  GMD: { name: 'Gambian Dalasi', flag: '🇬🇲' },
+  GNF: { name: 'Guinean Franc', flag: '🇬🇳' },
+  GTQ: { name: 'Guatemalan Quetzal', flag: '🇬🇹' },
+  GYD: { name: 'Guyanese Dollar', flag: '🇬🇾' },
+  HKD: { name: 'Hong Kong Dollar', flag: '🇭🇰' },
+  HNL: { name: 'Honduran Lempira', flag: '🇭🇳' },
+  HRK: { name: 'Croatian Kuna', flag: '🇭🇷' },
+  HTG: { name: 'Haitian Gourde', flag: '🇭🇹' },
+  HUF: { name: 'Hungarian Forint', flag: '🇭🇺' },
+  IDR: { name: 'Indonesian Rupiah', flag: '🇮🇩' },
+  ILS: { name: 'Israeli New Shekel', flag: '🇮🇱' },
+  IQD: { name: 'Iraqi Dinar', flag: '🇮🇶' },
+  IRR: { name: 'Iranian Rial', flag: '🇮🇷' },
+  ISK: { name: 'Icelandic Króna', flag: '🇮🇸' },
+  JMD: { name: 'Jamaican Dollar', flag: '🇯🇲' },
+  JOD: { name: 'Jordanian Dinar', flag: '🇯🇴' },
+  KES: { name: 'Kenyan Shilling', flag: '🇰🇪' },
+  KGS: { name: 'Kyrgystani Som', flag: '🇰🇬' },
+  KHR: { name: 'Cambodian Riel', flag: '🇰🇭' },
+  KMF: { name: 'Comorian Franc', flag: '🇰🇲' },
+  KPW: { name: 'North Korean Won', flag: '🇰🇵' },
+  KRW: { name: 'South Korean Won', flag: '🇰🇷' },
+  KWD: { name: 'Kuwaiti Dinar', flag: '🇰🇼' },
+  KYD: { name: 'Cayman Islands Dollar', flag: '🇰🇾' },
+  KZT: { name: 'Kazakhstani Tenge', flag: '🇰🇿' },
+  LAK: { name: 'Laotian Kip', flag: '🇱🇦' },
+  LBP: { name: 'Lebanese Pound', flag: '🇱🇧' },
+  LKR: { name: 'Sri Lankan Rupee', flag: '🇱🇰' },
+  LRD: { name: 'Liberian Dollar', flag: '🇱🇷' },
+  LSL: { name: 'Lesotho Loti', flag: '🇱🇸' },
+  LYD: { name: 'Libyan Dinar', flag: '🇱🇾' },
+  MAD: { name: 'Moroccan Dirham', flag: '🇲🇦' },
+  MDL: { name: 'Moldovan Leu', flag: '🇲🇩' },
+  MGA: { name: 'Malagasy Ariary', flag: '🇲🇬' },
+  MKD: { name: 'Macedonian Denar', flag: '🇲🇰' },
+  MMK: { name: 'Myanmar Kyat', flag: '🇲🇲' },
+  MNT: { name: 'Mongolian Tughrik', flag: '🇲🇳' },
+  MOP: { name: 'Macanese Pataca', flag: '🇲🇴' },
+  MRU: { name: 'Mauritanian Ouguiya', flag: '🇲🇷' },
+  MUR: { name: 'Mauritian Rupee', flag: '🇲🇺' },
+  MVR: { name: 'Maldivian Rufiyaa', flag: '🇲🇻' },
+  MWK: { name: 'Malawian Kwacha', flag: '🇲🇼' },
+  MXN: { name: 'Mexican Peso', flag: '🇲🇽' },
+  MYR: { name: 'Malaysian Ringgit', flag: '🇲🇾' },
+  MZN: { name: 'Mozambican Metical', flag: '🇲🇿' },
+  NAD: { name: 'Namibian Dollar', flag: '🇳🇦' },
+  NGN: { name: 'Nigerian Naira', flag: '🇳🇬' },
+  NIO: { name: 'Nicaraguan Córdoba', flag: '🇳🇮' },
+  NOK: { name: 'Norwegian Krone', flag: '🇳🇴' },
+  NPR: { name: 'Nepalese Rupee', flag: '🇳🇵' },
+  OMR: { name: 'Omani Rial', flag: '🇴🇲' },
+  PAB: { name: 'Panamanian Balboa', flag: '🇵🇦' },
+  PEN: { name: 'Peruvian Sol', flag: '🇵🇪' },
+  PGK: { name: 'Papua New Guinean Kina', flag: '🇵🇬' },
+  PHP: { name: 'Philippine Peso', flag: '🇵🇭' },
+  PKR: { name: 'Pakistani Rupee', flag: '🇵🇰' },
+  PLN: { name: 'Polish Złoty', flag: '🇵🇱' },
+  PYG: { name: 'Paraguayan Guaraní', flag: '🇵🇾' },
+  QAR: { name: 'Qatari Riyal', flag: '🇶🇦' },
+  RON: { name: 'Romanian Leu', flag: '🇷🇴' },
+  RSD: { name: 'Serbian Dinar', flag: '🇷🇸' },
+  RUB: { name: 'Russian Ruble', flag: '🇷🇺' },
+  RWF: { name: 'Rwandan Franc', flag: '🇷🇼' },
+  SAR: { name: 'Saudi Riyal', flag: '🇸🇦' },
+  SBD: { name: 'Solomon Islands Dollar', flag: '🇸🇧' },
+  SCR: { name: 'Seychellois Rupee', flag: '🇸🇨' },
+  SDG: { name: 'Sudanese Pound', flag: '🇸🇩' },
+  SEK: { name: 'Swedish Krone', flag: '🇸🇪' },
+  SGD: { name: 'Singapore Dollar', flag: '🇸🇬' },
+  SHP: { name: 'St. Helena Pound', flag: '🇸🇭' },
+  SLL: { name: 'Sierra Leonean Leone', flag: '🇸🇱' },
+  SOS: { name: 'Somali Shilling', flag: '🇸🇴' },
+  SRD: { name: 'Surinamese Dollar', flag: '🇸🇷' },
+  SSP: { name: 'South Sudanese Pound', flag: '🇸🇸' },
+  STN: { name: 'São Tomé Dobra', flag: '🇸🇹' },
+  SYP: { name: 'Syrian Pound', flag: '🇸🇾' },
+  SZL: { name: 'Swazi Lilangeni', flag: '🇸🇿' },
+  THB: { name: 'Thai Baht', flag: '🇹🇭' },
+  TJS: { name: 'Tajikistani Somoni', flag: '🇹🇯' },
+  TMT: { name: 'Turkmenistani Manat', flag: '🇹🇲' },
+  TND: { name: 'Tunisian Dinar', flag: '🇹🇳' },
+  TOP: { name: 'Tongan Paʻanga', flag: '🇹🇴' },
+  TRY: { name: 'Turkish Lira', flag: '🇹🇷' },
+  TTD: { name: 'Trinidad & Tobago Dollar', flag: '🇹🇹' },
+  TWD: { name: 'New Taiwan Dollar', flag: '🇹🇼' },
+  TZS: { name: 'Tanzanian Shilling', flag: '🇹🇿' },
+  UAH: { name: 'Ukrainian Hryvnia', flag: '🇺🇦' },
+  UGX: { name: 'Ugandan Shilling', flag: '🇺🇬' },
+  UYU: { name: 'Uruguayan Peso', flag: '🇺🇾' },
+  UZS: { name: 'Uzbekistani Som', flag: '🇺🇿' },
+  VES: { name: 'Venezuelan Bolívar', flag: '🇻🇪' },
+  VND: { name: 'Vietnamese Đồng', flag: '🇻🇳' },
+  VUV: { name: 'Vanuatu Vatu', flag: '🇻🇺' },
+  WST: { name: 'Samoan Tālā', flag: '🇼🇸' },
+  XAF: { name: 'Central African CFA Franc', flag: '🇨🇫' },
+  XCD: { name: 'East Caribbean Dollar', flag: '🇦🇬' },
+  XOF: { name: 'West African CFA Franc', flag: '🇸🇳' },
+  XPF: { name: 'CFP Franc', flag: '🇵🇫' },
+  YER: { name: 'Yemeni Rial', flag: '🇾🇪' },
+  ZAR: { name: 'South African Rand', flag: '🇿🇦' },
+  ZMW: { name: 'Zambian Kwacha', flag: '🇿🇲' },
+  ZWL: { name: 'Zimbabwean Dollar', flag: '🇿🇼' }
+};
 
 export const CurrencyConverter = () => {
   const { playClickSound } = useTheme();
@@ -15,7 +173,6 @@ export const CurrencyConverter = () => {
   const [toCurrency, setToCurrency] = useState('INR');
   const [amount, setAmount] = useState('1');
   const [result, setResult] = useState('0');
-  const [searchQuery, setSearchQuery] = useState('');
   const [syncing, setSyncing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState('');
 
@@ -32,10 +189,6 @@ export const CurrencyConverter = () => {
       return;
     }
 
-    // Convert amount from `fromCurrency` to Base (USD), then to `toCurrency`
-    // rate is relative to USD (1 USD = rate units)
-    // E.g. USD to INR: baseVal = amt / 1; result = baseVal * 83.50 = 83.50
-    // E.g. EUR to INR: baseVal = amt / 0.92; result = baseVal * 83.50
     const baseVal = amt / fromObj.rate;
     const finalVal = baseVal * toObj.rate;
 
@@ -70,12 +223,14 @@ export const CurrencyConverter = () => {
       await db.transaction('rw', db.currency_rates, async () => {
         for (let code of Object.keys(rates)) {
           const rateVal = rates[code];
-          // If we already have the currency seeded (with name and flag), update its rate.
-          // Otherwise, we can add it to the DB if we want, but let's stick to updating the seeded ones.
-          const exists = await db.currency_rates.get(code);
-          if (exists) {
-            await db.currency_rates.update(code, {
+          const info = CURRENCY_DETAILS[code];
+          if (info) {
+            // Write/update the currency rate
+            await db.currency_rates.put({
+              code,
               rate: rateVal,
+              flag: info.flag,
+              name: info.name,
               lastUpdated: now
             });
           }
@@ -91,14 +246,7 @@ export const CurrencyConverter = () => {
     }
   };
 
-  // Filter list for search queries
-  const filteredCurrencies = currencyRates
-    ? currencyRates.filter(
-        (c) =>
-          c.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          c.name.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : [];
+
 
   const activeFrom = currencyRates?.find((c) => c.code === fromCurrency);
   const activeTo = currencyRates?.find((c) => c.code === toCurrency);
@@ -246,48 +394,6 @@ export const CurrencyConverter = () => {
           <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
             Rates DB sync last updated: {lastUpdated || 'Initial Seeds'}
           </p>
-        </div>
-
-        {/* Search Helper Table */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '0.5rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '6px 10px' }}>
-            <Search size={14} className="text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search exchange rates in DB..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: 'var(--text-primary)',
-                fontSize: '0.8rem',
-                outline: 'none',
-                width: '100%'
-              }}
-            />
-          </div>
-
-          <div style={{ maxHeight: '120px', overflowY: 'auto', border: '1px solid var(--card-border)', borderRadius: '10px' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem', textAlign: 'left' }}>
-              <thead>
-                <tr style={{ background: 'rgba(255,255,255,0.03)', color: 'var(--text-secondary)', borderBottom: '1px solid var(--card-border)' }}>
-                  <th style={{ padding: '6px 12px' }}>Code</th>
-                  <th style={{ padding: '6px 12px' }}>Name</th>
-                  <th style={{ padding: '6px 12px' }}>Rate (1 USD)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredCurrencies.map((c) => (
-                  <tr key={c.code} style={{ borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
-                    <td style={{ padding: '6px 12px', fontWeight: 600 }}>{c.flag} {c.code}</td>
-                    <td style={{ padding: '6px 12px', color: 'var(--text-secondary)' }}>{c.name}</td>
-                    <td style={{ padding: '6px 12px', fontFamily: 'monospace' }}>{c.rate.toFixed(4)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
         </div>
 
       </div>

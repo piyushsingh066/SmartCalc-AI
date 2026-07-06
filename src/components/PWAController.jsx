@@ -1,20 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { Download, CloudOff, Wifi } from 'lucide-react';
+import { Download, CloudOff, Wifi, X, Share } from 'lucide-react';
 
 export const PWAController = () => {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
-  const [showInstallBtn, setShowInstallBtn] = useState(false);
+  const [showInstallBtn, setShowInstallBtn] = useState(true);
+  const [instructionsVisible, setInstructionsVisible] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [showOfflineBanner, setShowOfflineBanner] = useState(!navigator.onLine);
+  const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
+    // Detect iOS
+    const userAgent = window.navigator.userAgent || window.navigator.vendor || window.opera;
+    const ios = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
+    setIsIOS(ios);
+
+    // Check if already running in standalone mode (installed)
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    if (isStandalone) {
+      setShowInstallBtn(false);
+    }
+
     // 1. Listen for PWA installation prompt availability
     const handleBeforeInstallPrompt = (e) => {
-      // Prevent the mini-infobar from appearing on mobile
       e.preventDefault();
-      // Save the event so it can be triggered later
       setDeferredPrompt(e);
-      // Update UI to show the install button
+      // Keep showing the button, we have the native prompt ready
       setShowInstallBtn(true);
     };
 
@@ -22,9 +33,10 @@ export const PWAController = () => {
 
     // 2. Listen for successful installation
     const handleAppInstalled = () => {
-      console.log('PWA was installed successfully');
+      console.log('PWA installed successfully');
       setShowInstallBtn(false);
       setDeferredPrompt(null);
+      setInstructionsVisible(false);
     };
 
     window.addEventListener('appinstalled', handleAppInstalled);
@@ -32,7 +44,7 @@ export const PWAController = () => {
     // 3. Listen for online/offline connectivity changes
     const handleOnline = () => {
       setIsOffline(false);
-      setShowOfflineBanner(true); // Show "Back Online" alert briefly
+      setShowOfflineBanner(true);
       setTimeout(() => setShowOfflineBanner(false), 3000);
     };
 
@@ -44,11 +56,6 @@ export const PWAController = () => {
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    // Check if app is already running in standalone mode (installed)
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      setShowInstallBtn(false);
-    }
-
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
@@ -58,23 +65,24 @@ export const PWAController = () => {
   }, []);
 
   const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
-    
-    // Show the native browser installation prompt
-    deferredPrompt.prompt();
-    
-    // Wait for the user to respond to the prompt
-    const { outcome } = await deferredPrompt.userChoice;
-    console.log(`User response to install prompt: ${outcome}`);
-    
-    // We no longer need the prompt, clear it
-    setDeferredPrompt(null);
-    setShowInstallBtn(false);
+    if (deferredPrompt) {
+      // 1. Trigger the native installation flow
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      console.log(`User response to install: ${outcome}`);
+      if (outcome === 'accepted') {
+        setShowInstallBtn(false);
+        setDeferredPrompt(null);
+      }
+    } else {
+      // 2. Show custom step-by-step instructions if native prompt is not supported (e.g. iOS Safari)
+      setInstructionsVisible(true);
+    }
   };
 
   return (
     <>
-      {/* Dynamic CSS Keyframes & Styles */}
+      {/* Dynamic CSS Styles */}
       <style>{`
         .pwa-install-btn {
           position: fixed;
@@ -113,6 +121,120 @@ export const PWAController = () => {
           border: 2px solid var(--accent, #2563eb);
           opacity: 0;
           animation: pwa-ripple 1.5s infinite;
+        }
+
+        /* Modal Overlay */
+        .pwa-modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100vw;
+          height: 100vh;
+          background: rgba(0, 0, 0, 0.7);
+          backdrop-filter: blur(8px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 10000;
+          animation: pwa-fade-in 0.3s ease-out;
+          padding: 20px;
+        }
+
+        .pwa-modal-card {
+          width: 100%;
+          max-width: 400px;
+          background: #1e293b;
+          background-color: var(--card-bg, rgba(30, 41, 59, 0.95));
+          border: 1px solid var(--card-border, rgba(255, 255, 255, 0.1));
+          border-radius: 20px;
+          padding: 24px;
+          box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+          position: relative;
+          color: #fff;
+          font-family: var(--font-sans, sans-serif);
+        }
+
+        .pwa-modal-close {
+          position: absolute;
+          top: 16px;
+          right: 16px;
+          background: rgba(255, 255, 255, 0.05);
+          border: none;
+          color: #94a3b8;
+          cursor: pointer;
+          padding: 6px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s ease;
+        }
+
+        .pwa-modal-close:hover {
+          background: rgba(255, 255, 255, 0.1);
+          color: #fff;
+        }
+
+        .pwa-modal-title {
+          font-family: var(--font-display, sans-serif);
+          font-size: 1.25rem;
+          font-weight: 700;
+          margin-bottom: 12px;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          color: #fff;
+        }
+
+        .pwa-modal-body {
+          font-size: 0.95rem;
+          line-height: 1.5;
+          color: #cbd5e1;
+        }
+
+        .pwa-step-list {
+          margin-top: 16px;
+          padding-left: 0;
+          list-style: none;
+        }
+
+        .pwa-step-item {
+          display: flex;
+          align-items: flex-start;
+          gap: 12px;
+          margin-bottom: 14px;
+          font-size: 0.9rem;
+        }
+
+        .pwa-step-num {
+          background: var(--accent, #2563eb);
+          color: #fff;
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: bold;
+          font-size: 0.8rem;
+          flex-shrink: 0;
+        }
+
+        .pwa-step-text {
+          flex: 1;
+          color: #cbd5e1;
+          font-weight: 500;
+        }
+
+        .pwa-highlight-icon {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(255, 255, 255, 0.08);
+          border-radius: 6px;
+          padding: 3px 6px;
+          margin: 0 4px;
+          vertical-align: middle;
         }
 
         .pwa-offline-banner {
@@ -182,7 +304,63 @@ export const PWAController = () => {
         </button>
       )}
 
-      {/* 2. Offline / Online Status Indicator */}
+      {/* 2. Step-by-Step Instructions Modal */}
+      {instructionsVisible && (
+        <div className="pwa-modal-overlay" onClick={() => setInstructionsVisible(false)}>
+          <div className="pwa-modal-card" onClick={(e) => e.stopPropagation()}>
+            <button className="pwa-modal-close" onClick={() => setInstructionsVisible(false)}>
+              <X size={18} />
+            </button>
+            <div className="pwa-modal-title">
+              <Download color="var(--accent, #2563eb)" size={22} />
+              <span>Install SmartCalc AI</span>
+            </div>
+            <div className="pwa-modal-body">
+              <p>Install this web application on your device to run it full-screen and offline like a native app.</p>
+              
+              {isIOS ? (
+                <ul className="pwa-step-list">
+                  <li className="pwa-step-item">
+                    <span className="pwa-step-num">1</span>
+                    <span className="pwa-step-text">
+                      Tap the share button 
+                      <span className="pwa-highlight-icon">
+                        <Share color="#3b82f6" size={14} />
+                      </span>
+                      in Safari's bottom toolbar.
+                    </span>
+                  </li>
+                  <li className="pwa-step-item">
+                    <span className="pwa-step-num">2</span>
+                    <span className="pwa-step-text">Scroll down the menu list and tap <strong style={{ color: '#fff' }}>Add to Home Screen</strong>.</span>
+                  </li>
+                  <li className="pwa-step-item">
+                    <span className="pwa-step-num">3</span>
+                    <span className="pwa-step-text">Confirm the name and tap <strong style={{ color: '#fff' }}>Add</strong> in the top-right corner.</span>
+                  </li>
+                </ul>
+              ) : (
+                <ul className="pwa-step-list">
+                  <li className="pwa-step-item">
+                    <span className="pwa-step-num">1</span>
+                    <span className="pwa-step-text">Tap the browser menu icon (three dots <strong style={{ color: '#fff' }}>⋮</strong> in the top-right).</span>
+                  </li>
+                  <li className="pwa-step-item">
+                    <span className="pwa-step-num">2</span>
+                    <span className="pwa-step-text">Select <strong style={{ color: '#fff' }}>Install App</strong> or <strong style={{ color: '#fff' }}>Add to Home Screen</strong>.</span>
+                  </li>
+                  <li className="pwa-step-item">
+                    <span className="pwa-step-num">3</span>
+                    <span className="pwa-step-text">Confirm the installation dialog to add it to your launcher.</span>
+                  </li>
+                </ul>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3. Offline / Online Status Indicator */}
       {showOfflineBanner && (
         <div className={`pwa-offline-banner ${isOffline ? 'pwa-offline' : 'pwa-online'}`}>
           {isOffline ? (
